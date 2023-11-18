@@ -49,7 +49,7 @@ app.post(
   handleValidationErrors,
   UserController.login
 );
-app.get("/auth/me", checkAuth, UserController.me);
+app.get("/mongodb_project/auth/me", checkAuth, UserController.me);
 app.post(
   "/auth/register",
   registerValidation,
