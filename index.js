@@ -43,7 +43,7 @@ app.use(cors());
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
-app.use("/mongodb_project", router);
+app.use("/", router);
 
 //upload image
 app.post("/upload", checkAuth, upload.single("image"), (req, res) => {
