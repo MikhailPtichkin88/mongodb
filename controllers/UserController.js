@@ -74,4 +74,46 @@ const me = async (req, res) => {
   }
 };
 
-export {register, login, me};
+const update = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const user = await UserModel.findById(userId);
+
+    if (!user.avatarUrl && req.pictureName) {
+      await UserModel.findOneAndUpdate(
+        {_id: userId},
+        {avatarUrl: req.pictureName}
+      );
+    }
+    if (req.body.email) {
+      // Проверяем, существует ли пользователь с таким email
+      const existingUser = await UserModel.findOne({
+        email: req.body.email,
+        _id: {$ne: userId},
+      });
+      if (existingUser) {
+        return res
+          .status(400)
+          .json({error: "Email уже используется другим пользователем"});
+      }
+
+      await UserModel.findOneAndUpdate({_id: userId}, {email: req.body.email});
+    }
+
+    if (req.body.fullName) {
+      await UserModel.findOneAndUpdate(
+        {_id: userId},
+        {fullName: req.body.fullName}
+      );
+    }
+
+    const updatedUser = await UserModel.findById(userId);
+    return res.json(updatedUser);
+  } catch (err) {
+    return res
+      .status(500)
+      .json({message: "Произошла ошибка при обновлении данных пользователя"});
+  }
+};
+
+export {register, login, me, update};

@@ -1,13 +1,9 @@
 import express from "express";
 import mongoose from "mongoose";
-import {
-  registerValidation,
-  loginValidation,
-  postCreateValidation,
-} from "./validations.js";
+
 import multer from "multer";
-import {UserController, PostController} from "./controllers/index.js";
-import {handleValidationErrors, checkAuth} from "./utils/index.js";
+
+import {checkAuth} from "./utils/index.js";
 import cors from "cors";
 import {config as dotenvConfig} from "dotenv";
 import {fileURLToPath} from "url";
@@ -42,6 +38,8 @@ const upload = multer({storage});
 app.use(cors());
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
+app.use("/uploads/avatars", express.static("uploads/avatars"));
+app.use("/uploads/sessions", express.static("uploads/sessions"));
 
 app.use("/", router);
 

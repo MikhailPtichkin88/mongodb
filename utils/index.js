@@ -1,3 +1,5 @@
 import handleValidationErrors from "./handleValidationErrors.js";
 import checkAuth from "./checkAuth.js";
-export {handleValidationErrors, checkAuth};
+import savePicture from "./savePicture.js";
+
+export {handleValidationErrors, checkAuth, savePicture};

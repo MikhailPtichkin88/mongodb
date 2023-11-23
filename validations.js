@@ -1,4 +1,5 @@
-import {body} from "express-validator";
+import {body, query} from "express-validator";
+import mongoose from "mongoose";
 
 export const registerValidation = [
   body("email", "Неверный формат почты").isEmail(),
@@ -16,13 +17,50 @@ export const loginValidation = [
   }),
 ];
 
-export const postCreateValidation = [
-  body("title", "Введите заголовок статьи").isLength({min: 3}).isString(),
-  body("text", "Введите текст статьи")
+export const updateUserDataValidation = [
+  body("email", "Неверный формат почты").optional().isEmail(),
+  body("fullName", "Имя должно быть более 2 символов")
+    .optional()
+    .isLength({min: 3}),
+];
+
+export const titleAndDescrValidation = [
+  body("title", "Название должно быть не менее 3 символов")
+    .optional()
+    .isLength({min: 3})
+    .isString(),
+  body("session_info", "Описание сессии должно быть более 3 символов")
+    .optional()
     .isLength({
-      min: 10,
+      min: 3,
     })
     .isString(),
-  body("tags", "Неверный формат тэгов (укажите массив)").optional().isString(),
-  body("imageUrl", "Неверная ссылка на изображение").optional().isString(),
+  body("card_info", "Описание Карточки должно быть более 3 символов")
+    .optional()
+    .isLength({
+      min: 3,
+    })
+    .isString(),
+];
+
+export const bindUserValidation = [
+  body("user_id").custom((value) => {
+    if (!mongoose.Types.ObjectId.isValid(value)) {
+      throw new Error(
+        "У ключа 'user_id' неверный формат ID или ключ отсутствует"
+      );
+    }
+    return true;
+  }),
+];
+
+export const selectCardValidation = [
+  query("sessionId").custom((value) => {
+    if (!mongoose.Types.ObjectId.isValid(value)) {
+      throw new Error(
+        "У query параметра 'sessionId' неверный формат ID или параметр отсутствует"
+      );
+    }
+    return true;
+  }),
 ];
