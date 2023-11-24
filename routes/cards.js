@@ -7,7 +7,7 @@ import {
 } from "../utils/index.js";
 import {
   titleAndDescrValidation,
-  bindUserValidation,
+  // bindUserValidation,
   selectCardValidation,
 } from "../validations.js";
 import multer from "multer";
@@ -58,11 +58,11 @@ router.patch(
   CardController.update
 );
 
-router.patch(
-  "/:cardId/bindUser",
-  checkAuth,
-  bindUserValidation,
-  CardController.bindUser
-);
+// router.patch(
+//   "/:cardId/bindUser",
+//   checkAuth,
+//   bindUserValidation,
+//   CardController.bindUser
+// );
 
 router.delete("/:cardId", checkAuth, CardController.remove);

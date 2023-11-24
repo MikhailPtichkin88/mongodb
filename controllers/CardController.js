@@ -74,22 +74,33 @@ const remove = async (req, res) => {
   }
 };
 
-const bindUser = async (req, res) => {
-  try {
-    const cardId = req.params.cardId;
-    const updatedCard = await CardModel.findOneAndUpdate(
-      {_id: cardId},
-      {
-        user_id: req.body.user_id,
-      },
-      {returnDocument: "after"}
-    );
-    return res.json(updatedCard);
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({message: "Не удалось обновить карточку"});
-  }
-};
+// const bindUser = async (req, res) => {
+//   try {
+//     const cardId = req.params.cardId;
+//     const updatedCard = await CardModel.findOneAndUpdate(
+//       {_id: cardId},
+//       {
+//         user_id: req.body.user_id,
+//       },
+//       {returnDocument: "after"}
+//     );
+//      // обновление Participant
+//      try {
+//       await ParicipantModel.findOneAndUpdate(
+//         {user_id: userId},
+//         {has_picked_random_card: true},
+//         {new: true}
+//       );
+//     } catch (error) {
+//       return res.status(500).json({error: "Ошибка при обновлении участника"});
+//      }
+
+//     return res.json(updatedCard);
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).json({message: "Не удалось обновить карточку"});
+//   }
+// };
 
 const chooseCard = async (req, res) => {
   try {
@@ -146,4 +157,11 @@ const chooseCard = async (req, res) => {
   }
 };
 
-export {getAll, update, remove, create, bindUser, chooseCard};
+export {
+  getAll,
+  update,
+  remove,
+  create,
+  // bindUser,
+  chooseCard,
+};

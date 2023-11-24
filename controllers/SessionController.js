@@ -10,7 +10,7 @@ const getAll = async (req, res) => {
       })
       .populate({
         path: "participants",
-        populate: {path: "user_id"},
+        populate: {path: "user", select: "fullName avatar _id"},
       });
     res.json(sessions);
   } catch (error) {
@@ -26,7 +26,7 @@ const getOne = async (req, res) => {
       .populate({path: "cards"})
       .populate({
         path: "participants",
-        populate: {path: "user_id"},
+        populate: {path: "user", select: "fullName avatar _id"},
       });
 
     if (!session) {
@@ -59,9 +59,11 @@ const remove = async (req, res) => {
   try {
     const sessionId = req.params.sessionId;
     const userId = req.userId;
-    const deletedPost = await SessionModel.findOneAndDelete({_id: sessionId});
+    const deletedSession = await SessionModel.findOneAndDelete({
+      _id: sessionId,
+    });
 
-    if (!deletedPost) {
+    if (!deletedSession) {
       return res.status(500).json({message: "Ошибка при удалении сессии"});
     }
     const sessions = await SessionModel.find({created_by: userId});
