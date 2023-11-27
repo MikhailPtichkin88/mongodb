@@ -10,7 +10,7 @@ const getAll = async (req, res) => {
       })
       .populate({
         path: "participants",
-        populate: {path: "user", select: "fullName avatar _id"},
+        populate: {path: "user", select: "fullName avatarUrl _id"},
       });
     res.json(sessions);
   } catch (error) {
@@ -23,10 +23,10 @@ const getOne = async (req, res) => {
   try {
     const sessionId = req.params.sessionId;
     const session = await SessionModel.findById({_id: sessionId})
-      .populate({path: "cards"})
+      .populate({path: "cards", select: "-selected_by"})
       .populate({
         path: "participants",
-        populate: {path: "user", select: "fullName avatar _id"},
+        populate: {path: "user", select: "fullName avatarUrl _id"},
       });
 
     if (!session) {
@@ -41,11 +41,13 @@ const getOne = async (req, res) => {
 
 const create = async (req, res) => {
   try {
+    console.log(req.userId);
     const doc = new SessionModel({
       created_by: req.userId,
       title: req.body.title,
       session_info: req.body.session_info,
       total_participants: req.body.total_participants,
+      status: "opened",
     });
     const session = await doc.save();
     res.json(session);

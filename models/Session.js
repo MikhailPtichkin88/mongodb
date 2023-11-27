@@ -17,6 +17,10 @@ const SessionSchema = new mongoose.Schema(
     session_info: {
       type: String,
     },
+    status: {
+      type: String,
+      required: true,
+    },
     total_participants: {
       type: Number,
     },

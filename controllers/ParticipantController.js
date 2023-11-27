@@ -1,13 +1,14 @@
 import ParticipantModel from "../models/Participant.js";
 import SessionModel from "../models/Session.js";
 import CardModel from "../models/Card.js";
+import {populate} from "dotenv";
 
 const getAll = async (req, res) => {
   const sessionId = req.query.sessionId;
   try {
     const participants = await ParticipantModel.find({
       session_id: sessionId,
-    }).populate({path: "user", select: "_id fullName avatar"});
+    }).populate({path: "user", select: "_id fullName avatarUrl"});
 
     res.json(participants);
   } catch (error) {
@@ -20,9 +21,6 @@ const create = async (req, res) => {
   try {
     const session = await SessionModel.findOne({
       _id: req.body.session_id,
-    }).populate({
-      path: "participants",
-      populate: {path: "user", select: "_id"},
     });
 
     if (!session) {
@@ -37,8 +35,13 @@ const create = async (req, res) => {
           "Достигнуто максимальное количество участников в рамках сессии",
       });
     }
+
+    const participants = await ParticipantModel.find({
+      session_id: req.body.session_id,
+    }).populate({path: "user", select: "_id"});
+
     if (
-      session.participants?.find((participant) => {
+      participants?.find((participant) => {
         return participant?.user?._id?.toString() === req.userId;
       })
     ) {
@@ -55,10 +58,14 @@ const create = async (req, res) => {
     });
     const participant = await doc.save();
 
-    session.participants = [...session.participants, participant._id];
+    session.participants = [...participants.map((p) => p._id), participant._id];
     await session.save();
 
-    res.json(participant);
+    const updatedParticipants = await ParticipantModel.find({
+      session_id: req.body.session_id,
+    }).populate({path: "user", select: "_id fullName avatarUrl"});
+
+    res.json(updatedParticipants);
   } catch (error) {
     console.log(error);
     res.status(500).json({message: "Не удалось создать участника"});
@@ -66,36 +73,22 @@ const create = async (req, res) => {
 };
 
 const bindUser = async (req, res) => {
-  const {card_id, bind_user_id} = req.body;
+  const {card_id, bind_user_id, session_id} = req.body;
+
+  const updatedCard = await CardModel.findOne({_id: card_id});
+  const updatedParticipant = await ParticipantModel.findOne({
+    user: req.userId,
+    session_id,
+  });
 
   //функционал удаления отметки своей карты
   if (!bind_user_id) {
     try {
-      const updatedCard = await CardModel.findOneAndUpdate(
-        {_id: card_id},
-        {
-          user_id: null,
-        },
-        {returnDocument: "after"}
-      );
+      updatedCard.user_id = null;
+      updatedParticipant.has_picked_own_card = false;
+      await updatedCard.save();
+      await updatedParticipant.save();
 
-      const session = await SessionModel.findOne({
-        _id: updatedCard.session_id,
-      });
-
-      const participantToUpdate = session.participants.find((participant) =>
-        participant?.user_id?.equals(req.userId)
-      );
-      if (participantToUpdate) {
-        participantToUpdate.has_picked_own_card = false;
-      }
-
-      const updatedParticipant = await ParticipantModel.findOneAndUpdate(
-        {user: {_id: req.userId}},
-        {has_picked_own_card: false},
-        {new: true}
-      );
-      await session.save();
       return res.json(updatedParticipant);
     } catch (error) {
       return res
@@ -105,31 +98,12 @@ const bindUser = async (req, res) => {
   }
 
   try {
-    const updatedCard = await CardModel.findOneAndUpdate(
-      {_id: card_id},
-      {
-        user_id: bind_user_id,
-      },
-      {returnDocument: "after"}
-    );
+    updatedCard.user_id = req.userId;
+    updatedParticipant.has_picked_own_card = true;
 
-    const session = await SessionModel.findOne({
-      _id: updatedCard.session_id,
-    });
+    await updatedCard.save();
+    await updatedParticipant.save();
 
-    const participantToUpdate = session.participants.find((participant) =>
-      participant?.user?.equals(req.userId)
-    );
-    if (participantToUpdate) {
-      participantToUpdate.has_picked_own_card = true;
-    }
-
-    const updatedParticipant = await ParticipantModel.findOneAndUpdate(
-      {user: bind_user_id},
-      {has_picked_own_card: true},
-      {new: true}
-    );
-    await session.save();
     return res.json(updatedParticipant);
   } catch (error) {
     console.log(error);
@@ -160,7 +134,7 @@ const remove = async (req, res) => {
 
     const session = await SessionModel.findOne({_id: sessionId}).populate({
       path: "participants",
-      populate: {path: "user", select: "fullName avatar _id"},
+      populate: {path: "user", select: "fullName avatarUrl _id"},
     });
 
     if (session && session.created_by?.toString() !== userId) {

@@ -4,6 +4,10 @@ import jwt from "jsonwebtoken";
 
 const register = async (req, res) => {
   try {
+    const userWithSameEmail = await UserModel.findOne({email: req.body.email});
+    if (userWithSameEmail) {
+      return res.status(400).json({message: "Такой email уже используется"});
+    }
     const password = req.body.passwordHash;
     const salt = await bcrypt.genSalt(10);
     const hash = await bcrypt.hash(password, salt);
@@ -63,7 +67,7 @@ const me = async (req, res) => {
   try {
     const user = await UserModel.findById(req.userId);
     if (!user) {
-      res.status(404).json({message: "Пользователь не найден"});
+      return res.status(404).json({message: "Пользователь не найден"});
     }
 
     const {passwordHash, ...userData} = user._doc;
