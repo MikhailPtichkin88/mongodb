@@ -1,6 +1,8 @@
 import CardModel from "../models/Card.js";
 import SessionModel from "../models/Session.js";
 import ParicipantModel from "../models/Participant.js";
+import path from "path";
+import fs from "fs";
 
 // получение всех карт в рамках одной сессии
 const getAll = async (req, res) => {
@@ -120,6 +122,44 @@ const remove = async (req, res) => {
       return id?.toString() !== req.params.cardId;
     });
     await session.save();
+
+    if (deleteCard.card_img) {
+      const directory = `uploads/cards/${req.query.sessionId}`;
+      fs.readdir(directory, (err, files) => {
+        if (err) {
+          console.error("Ошибка при чтении директории:", err);
+          return;
+        }
+
+        files.forEach((file) => {
+          const filePath = path.join(directory, file);
+          // Проверка наличия требуемой подстроки в имени файла
+          if (file.includes(`${req.params.cardId}`)) {
+            // Удаление файла
+            fs.unlink(filePath, (err) => {
+              if (err) {
+                console.error("Ошибка при удалении файла:", err);
+                return;
+              }
+              console.log(`Файл ${file} успешно удален.`);
+            });
+          }
+        });
+        fs.readdir(directory, (err, files) => {
+          if (!files.length) {
+            // Если папка пуста, удаляем её
+            fs.rmdir(directory, (err) => {
+              if (err) {
+                console.error("Ошибка при удалении пустой папки:", err);
+                return;
+              }
+              console.log("Пустая папка успешно удалена.");
+            });
+          }
+        });
+      });
+    }
+
     const cards = await CardModel.find({session_id: req.query.sessionId});
 
     return res.json(cards);
@@ -157,7 +197,7 @@ const chooseCard = async (req, res) => {
     participant.has_picked_random_card = true;
 
     await participant.save();
-    
+
     // обновление сессии
     try {
       const session = await SessionModel.findOne({
