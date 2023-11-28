@@ -37,14 +37,11 @@ const remove = async (req, res) => {
         session_id: session._id,
         user: deleteCard.user_id,
       });
-      console.log(participant);
+
       participant.has_picked_own_card = false;
       participant.user = null;
 
       const participantIndex = session.participants.findIndex((participant) => {
-        console.log(participant.user._id);
-        console.log(deleteCard.user_id);
-
         return participant.user._id === deleteCard.user_id;
       });
       session.participants[participantIndex].has_picked_own_card = false;

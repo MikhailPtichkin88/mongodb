@@ -58,11 +58,4 @@ router.patch(
   CardController.update
 );
 
-// router.patch(
-//   "/:cardId/bindUser",
-//   checkAuth,
-//   bindUserValidation,
-//   CardController.bindUser
-// );
-
 router.delete("/:cardId", checkAuth, CardController.remove);

@@ -1,7 +1,6 @@
 import ParticipantModel from "../models/Participant.js";
 import SessionModel from "../models/Session.js";
 import CardModel from "../models/Card.js";
-import {populate} from "dotenv";
 
 const getAll = async (req, res) => {
   const sessionId = req.query.sessionId;
@@ -86,6 +85,7 @@ const bindUser = async (req, res) => {
     try {
       updatedCard.user_id = null;
       updatedParticipant.has_picked_own_card = false;
+
       await updatedCard.save();
       await updatedParticipant.save();
 

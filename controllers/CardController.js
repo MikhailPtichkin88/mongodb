@@ -171,16 +171,16 @@ const remove = async (req, res) => {
 
 const chooseCard = async (req, res) => {
   try {
-    const sessionId = req.query.sessionId;
-    const userId = req.userId;
-    const eligibleCards = await CardModel.find({session_id: sessionId});
+    const {sessionId, participantId} = req.query;
 
-    const filteredCards = eligibleCards.filter((card) => {
-      return (
-        !(card?.user_id && card?.user_id?.toString() === userId) &&
-        !card?.selected_by
-      );
+    const userId = req.userId;
+
+    const filteredCards = await CardModel.find({
+      session_id: sessionId,
+      user_id: {$ne: userId},
+      selected_by: {$exists: false},
     });
+
     // Выбрать случайную карту из пула
     const randomIndex = Math.floor(Math.random() * filteredCards.length);
     const selectedCard = filteredCards[randomIndex];
@@ -190,7 +190,7 @@ const chooseCard = async (req, res) => {
     await selectedCard.save();
 
     // обновление Participant
-    const participant = await ParicipantModel.findOne({user: userId});
+    const participant = await ParicipantModel.findOne({_id: participantId});
     if (!participant) {
       return res.status(500).json({error: "Ошибка при обновлении участника"});
     }
@@ -201,7 +201,7 @@ const chooseCard = async (req, res) => {
     // обновление сессии
     try {
       const session = await SessionModel.findOne({
-        _id: selectedCard.session_id,
+        _id: sessionId,
       }).populate("participants");
 
       if (session.status === "opened") {

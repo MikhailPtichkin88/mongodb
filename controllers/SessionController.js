@@ -5,18 +5,51 @@ import fs from "fs";
 import path from "path";
 
 const getAll = async (req, res) => {
-  const userId = req.userId;
   try {
-    const sessions = await SessionModel.find({created_by: userId})
-      .populate({
-        path: "cards",
-        select: "-selected_by",
-      })
-      .populate({
-        path: "participants",
-        populate: {path: "user", select: "fullName avatarUrl _id"},
-      });
-    res.json(sessions);
+    const {
+      page = 1,
+      limit = 10,
+      sortBy = "title",
+      sortOrder = "desc",
+      status = "all",
+      userId = req.userId,
+    } = req.query;
+
+    const sortDirection = sortOrder === "desc" ? -1 : 1;
+
+    const statusFilter =
+      status === "active"
+        ? ["opened", "in_progress"]
+        : status === "closed"
+        ? ["closed"]
+        : ["opened", "in_progress", "closed"];
+
+    const totalDocs = await SessionModel.countDocuments({
+      created_by: userId,
+      status: {$in: statusFilter},
+    });
+
+    const totalPages = Math.ceil(totalDocs / limit);
+
+    const pagination = {
+      currentPage: Number(page),
+      totalPages: totalPages,
+      hasNextPage: parseInt(page) < totalPages,
+      hasPrevPage: parseInt(page) > 1,
+      limit: parseInt(limit),
+      total: totalDocs,
+    };
+
+    const data = await SessionModel.find({
+      created_by: userId,
+      status: {$in: statusFilter},
+    })
+
+      .sort({[sortBy]: sortDirection})
+      .limit(Number(limit))
+      .skip((page - 1) * limit);
+
+    res.json({data, pagination});
   } catch (error) {
     console.log(error);
     res.status(500).json({message: "Не удалось получить cессии"});
