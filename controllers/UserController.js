@@ -23,7 +23,7 @@ const register = async (req, res) => {
       {
         _id: user._id,
       },
-      "secret123",
+      process.env.SECRET_KEY,
       {expiresIn: "30d"}
     );
     const {passwordHash, ...userData} = user._doc;
@@ -51,7 +51,7 @@ const login = async (req, res) => {
       {
         _id: user._id,
       },
-      "secret123",
+      process.env.SECRET_KEY,
       {expiresIn: "30d"}
     );
     const {passwordHash, ...userData} = user._doc;

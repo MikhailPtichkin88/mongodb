@@ -15,7 +15,7 @@ const __dirname = dirname(__filename);
 
 dotenvConfig({path: resolve(__dirname, ".env")});
 
-const uri = `mongodb+srv://mikhailptichkin:${process.env.MONGO_DB_PASSWORD}@cluster0.zn7kax1.mongodb.net/blog?retryWrites=true&w=majority`;
+const uri = process.env.MONGO_DB_URI;
 
 mongoose
   .connect(uri)
