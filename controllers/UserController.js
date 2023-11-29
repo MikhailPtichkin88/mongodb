@@ -1,6 +1,7 @@
 import UserModel from "../models/User.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import {sendEmail} from "../utils/index.js";
 
 const register = async (req, res) => {
   try {
@@ -120,4 +121,28 @@ const update = async (req, res) => {
   }
 };
 
-export {register, login, me, update};
+const resetPassword = async (req, res) => {
+  try {
+    const {email} = req.body;
+    const user = await UserModel.findOne({email});
+    if (!user) {
+      return res.status(404).json({message: "Пользователь не найден"});
+    }
+
+    const token = jwt.sign(
+      {
+        _id: user._id,
+      },
+      process.env.SECRET_KEY,
+      {expiresIn: "1h"}
+    );
+    console.log(token);
+    await sendEmail("mikeptichkin5@gmail.com", token);
+    return res.json({
+      message: "Ссылка для восстановления пароля отправлена на почту",
+    });
+  } catch (error) {
+    return res.status(500).json({message: "Ошибка восстановления пароля"});
+  }
+};
+export {register, login, me, update, resetPassword};

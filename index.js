@@ -1,9 +1,5 @@
 import express from "express";
 import mongoose from "mongoose";
-
-import multer from "multer";
-
-import {checkAuth} from "./utils/index.js";
 import cors from "cors";
 import {config as dotenvConfig} from "dotenv";
 import {fileURLToPath} from "url";
@@ -24,52 +20,15 @@ mongoose
 
 const app = express();
 
-const storage = multer.diskStorage({
-  destination: (_, __, callback) => {
-    callback(null, "uploads");
-  },
-  filename: (_, file, callback) => {
-    callback(null, file.originalname);
-  },
-});
-
-const upload = multer({storage});
-
 app.use(cors());
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
-app.use("/uploads/avatars", express.static("uploads/avatars"));
-app.use("/uploads/sessions", express.static("uploads/sessions"));
+// app.use("/uploads/avatars", express.static("uploads/avatars"));
+// app.use("/uploads/sessions", express.static("uploads/sessions"));
 
 app.use("/", router);
 
-//upload image
-app.post("/upload", checkAuth, upload.single("image"), (req, res) => {
-  res.json({
-    url: `/uploads/${req.file.originalname}`,
-  });
-});
-
-//post
-// app.get("/posts", PostController.getAll);
-// app.get("/posts/:id", PostController.getOne);
-// app.post(
-//   "/posts",
-//   checkAuth,
-//   postCreateValidation,
-//   handleValidationErrors,
-//   PostController.create
-// );
-// app.patch(
-//   "/posts/:id",
-//   checkAuth,
-//   postCreateValidation,
-//   handleValidationErrors,
-//   PostController.update
-// );
-// app.delete("/posts/:id", checkAuth, PostController.remove);
-
-app.listen(8010, (err) => {
+app.listen(process.env.PORT, (err) => {
   if (err) {
     console.log(err);
   }

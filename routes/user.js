@@ -52,3 +52,6 @@ router.patch(
   handleValidationErrors,
   UserController.update
 );
+
+router.post("/resetPassword", UserController.resetPassword);
+// router.post("/new-password", UserController.setNewPassword);
