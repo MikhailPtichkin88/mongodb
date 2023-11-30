@@ -54,4 +54,4 @@ router.patch(
 );
 
 router.post("/resetPassword", UserController.resetPassword);
-// router.post("/new-password", UserController.setNewPassword);
+router.post("/setNewPassword", UserController.setNewPassword);

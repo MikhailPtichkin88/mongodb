@@ -136,8 +136,8 @@ const resetPassword = async (req, res) => {
       process.env.SECRET_KEY,
       {expiresIn: "1h"}
     );
-    console.log(token);
-    await sendEmail("mikeptichkin5@gmail.com", token);
+
+    await sendEmail(email, token);
     return res.json({
       message: "Ссылка для восстановления пароля отправлена на почту",
     });
@@ -145,4 +145,33 @@ const resetPassword = async (req, res) => {
     return res.status(500).json({message: "Ошибка восстановления пароля"});
   }
 };
-export {register, login, me, update, resetPassword};
+
+const setNewPassword = async (req, res) => {
+  try {
+    const {password} = req.body;
+    const token = (req.body.token || "").replace(/Bearer\s?/, "");
+
+    if (!token || !password) {
+      return res.status(404).json({message: "Некорректные данные"});
+    }
+    const {_id} = jwt.verify(token, process.env.SECRET_KEY);
+    const user = await UserModel.findOne({_id});
+
+    if (!user) {
+      return res.status(404).json({message: "Пользователь не найден"});
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const encryptedPassword = await bcrypt.hash(password, salt);
+
+    user.passwordHash = encryptedPassword;
+    await user.save();
+
+    return res.json({
+      message: "Пароль успешно изменен",
+    });
+  } catch (error) {
+    return res.status(500).json({message: "Ошибка восстановления пароля"});
+  }
+};
+export {register, login, me, update, resetPassword, setNewPassword};
