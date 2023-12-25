@@ -6,8 +6,7 @@
   "type": "module",
   "scripts": {
     "start:prod": "cross-env BASE_URL=https://ptichkinproject.ru node index.js",
-    "start:dev": "cross-env BASE_URL=http://localhost:3000 nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start:dev": "cross-env BASE_URL=http://localhost:3000 nodemon index.js"
   },
   "keywords": [],
   "author": "",
