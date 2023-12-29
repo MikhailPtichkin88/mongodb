@@ -10,7 +10,13 @@ import {
   loginValidation,
   updateUserDataValidation,
 } from "../validations.js";
+import {fileURLToPath} from "url";
+import {dirname, resolve} from "path";
 import multer from "multer";
+import fs from "fs";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export const router = new Router();
 
@@ -31,7 +37,13 @@ router.get("/me", checkAuth, UserController.me);
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "uploads/avatars");
+    const directory = resolve(__dirname, "..", "uploads", "avatars");
+    if (!fs.existsSync(directory)) {
+      // Создание директории
+      fs.mkdirSync(directory);
+      console.log("Директория успешно создана.");
+    }
+    cb(null, directory);
   },
   // savePicture - сохраняем саму картинку и записываем ее имя в req.pictureName
   filename: function (req, file, cb) {

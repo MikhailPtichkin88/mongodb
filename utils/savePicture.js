@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-export default function savePicture(req, file, cb, type) {
+export default async function savePicture(req, file, cb, type) {
   let id;
   let directory;
   switch (type) {
@@ -22,30 +22,35 @@ export default function savePicture(req, file, cb, type) {
   }
 
   const name = `${type}-${id}${path.extname(file.originalname)}`;
-
-  fs.readdir(directory, (err, files) => {
-    if (err) {
-      console.error("Ошибка при чтении директории:", err);
-      return;
-    }
-
-    files.forEach((file) => {
-      const filePath = path.join(directory, file);
-
-      // Проверка наличия требуемой подстроки в имени файла
-      if (file.includes(`${type}-${id}`)) {
-        // Удаление файла
-        fs.unlink(filePath, (err) => {
-          if (err) {
-            console.error("Ошибка при удалении файла:", err);
-            return;
-          }
-          console.log(`Файл ${file} успешно удален.`);
-        });
+  new Promise((res, rej) => {
+    fs.readdir(directory, (err, files) => {
+      if (err) {
+        console.error("Ошибка при чтении директории:", err);
+        rej();
       }
-    });
-  });
 
-  req.pictureName = name;
-  cb(null, name);
+      res(
+        files.forEach((file) => {
+          const filePath = path.join(directory, "/", file);
+
+          // Проверка наличия требуемой подстроки в имени файла
+          if (file.includes(`${type}-${id}`)) {
+            // Удаление файла
+            fs.unlink(filePath, (err) => {
+              if (err) {
+                console.error("Ошибка при удалении файла:", err);
+                rej();
+              }
+              console.log(`Файл ${file} успешно удален.`);
+            });
+          }
+        })
+      );
+    });
+  })
+    .then(() => {
+      req.pictureName = name;
+      cb(null, name);
+    })
+    .catch(() => console.log(`Ошибка при удалении файла`));
 }
