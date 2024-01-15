@@ -83,35 +83,6 @@ const update = async (req, res) => {
   try {
     const userId = req.userId;
 
-    // if (req.body.email) {
-    //   // Проверяем, существует ли пользователь с таким email
-    //   const existingUser = await UserModel.findOne({
-    //     email: req.body.email,
-    //     _id: {$ne: userId},
-    //   });
-    //   if (existingUser) {
-    //     return res
-    //       .status(400)
-    //       .json({error: "Email уже используется другим пользователем"});
-    //   }
-
-    //   await UserModel.findOneAndUpdate({_id: userId}, {email: req.body.email});
-    // }
-
-    // if (req.body.fullName) {
-    //   await UserModel.findOneAndUpdate(
-    //     {_id: userId},
-    //     {fullName: req.body.fullName}
-    //   );
-    // }
-
-    // if (req.body.city) {
-    //   await UserModel.findOneAndUpdate(
-    //     {_id: userId},
-    //     {fullName: req.body.fullName}
-    //   );
-    // }
-
     if (Object.keys(req.body).length > 0) {
       // Проверяем, существует ли пользователь с таким email
       const existingUser = await UserModel.findOne({
@@ -212,4 +183,32 @@ const setNewPassword = async (req, res) => {
     return res.status(500).json({message: "Ошибка восстановления пароля"});
   }
 };
-export {register, login, me, update, resetPassword, setNewPassword};
+
+const deleteAvatar = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const user = await UserModel.findOne({_id: userId});
+
+    if (!user) {
+      return res.status(404).json({message: "Пользователь не найден"});
+    }
+
+    user.avatarUrl = null;
+    await user.save();
+
+    return res.json({
+      message: "Аватар успешно удален",
+    });
+  } catch (error) {
+    return res.status(500).json({message: "Ошибка восстановления пароля"});
+  }
+};
+export {
+  register,
+  login,
+  me,
+  update,
+  resetPassword,
+  setNewPassword,
+  deleteAvatar,
+};

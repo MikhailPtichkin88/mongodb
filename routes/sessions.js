@@ -4,6 +4,7 @@ import {
   handleValidationErrors,
   checkAuth,
   savePicture,
+  deletePicture,
 } from "../utils/index.js";
 import {titleAndDescrValidation} from "../validations.js";
 import multer from "multer";
@@ -54,3 +55,9 @@ router.patch(
 );
 
 router.delete("/:sessionId", checkAuth, SessionController.remove);
+router.delete(
+  "/:sessionId/img",
+  checkAuth,
+  deletePicture("session"),
+  SessionController.deleteImg
+);

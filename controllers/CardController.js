@@ -80,50 +80,17 @@ const remove = async (req, res) => {
       populate: {path: "user", select: "_id"},
     });
 
-    if (session && session.status !== "opened") {
-      return res.status(403).json({
-        error: "Удалить карточку можно только в сессии в статусе 'Открыта'",
-      });
-    }
     if (session.created_by?.toString() !== req.userId) {
       return res
         .status(403)
         .json({message: "Удалить карточку может только создатель сессии"});
     }
-    const deleteCard = await CardModel.findOneAndDelete({
+
+    const card = await CardModel.findOne({
       _id: req.params.cardId,
     });
 
-    if (!deleteCard) {
-      return res.status(500).json({
-        message:
-          "Ошибка при поиске карты (карта уже удалена или не существует)",
-      });
-    }
-
-    if (deleteCard.user_id) {
-      const participant = await ParicipantModel.findOne({
-        session_id: session._id,
-        user: deleteCard.user_id,
-      });
-
-      participant.has_picked_own_card = false;
-
-      session.participants = session.participants.map((participant) => {
-        return participant.user?._id?.toString() ===
-          deleteCard.user_id?.toString()
-          ? {...participant, has_picked_own_card: false}
-          : participant;
-      });
-
-      await participant.save();
-    }
-    session.cards = session.cards?.filter((id) => {
-      return id?.toString() !== req.params.cardId;
-    });
-    await session.save();
-
-    if (deleteCard.card_img) {
+    if (card.card_img) {
       const directory = `uploads/cards/${req.query.sessionId}`;
       fs.readdir(directory, (err, files) => {
         if (err) {
@@ -159,6 +126,51 @@ const remove = async (req, res) => {
         });
       });
     }
+    if (req.query.deleteImg) {
+      if (!card) {
+        return res
+          .status(500)
+          .json({error: "Ошибка при удалении картинки карточки"});
+      }
+      card.card_img = null;
+      await card.save();
+      return res
+        .status(200)
+        .json({message: "Картинка карточки успешно удалена"});
+    }
+
+    const deleteCard = await CardModel.findOneAndDelete({
+      _id: req.params.cardId,
+    });
+
+    if (!deleteCard) {
+      return res.status(500).json({
+        message:
+          "Ошибка при поиске карты (карта уже удалена или не существует)",
+      });
+    }
+
+    if (deleteCard.user_id) {
+      const participant = await ParicipantModel.findOne({
+        session_id: session._id,
+        user: deleteCard.user_id,
+      });
+
+      participant.has_picked_own_card = false;
+
+      session.participants = session.participants.map((participant) => {
+        return participant.user?._id?.toString() ===
+          deleteCard.user_id?.toString()
+          ? {...participant, has_picked_own_card: false}
+          : participant;
+      });
+
+      await participant.save();
+    }
+    session.cards = session.cards?.filter((id) => {
+      return id?.toString() !== req.params.cardId;
+    });
+    await session.save();
 
     const cards = await CardModel.find({session_id: req.query.sessionId});
 

@@ -4,6 +4,7 @@ import {
   handleValidationErrors,
   checkAuth,
   savePicture,
+  deletePicture,
 } from "../utils/index.js";
 import {
   registerValidation,
@@ -63,6 +64,12 @@ router.patch(
   updateUserDataValidation,
   handleValidationErrors,
   UserController.update
+);
+router.delete(
+  "/deleteAvatar",
+  checkAuth,
+  deletePicture("avatar"),
+  UserController.deleteAvatar
 );
 
 router.post("/resetPassword", UserController.resetPassword);

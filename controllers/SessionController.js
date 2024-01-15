@@ -193,4 +193,29 @@ const update = async (req, res) => {
   }
 };
 
-export {getAll, getOne, create, update, remove};
+const deleteImg = async (req, res) => {
+  try {
+    const sessionId = req.params.sessionId;
+    const userId = req.userId;
+
+    const session = await SessionModel.findOne({
+      _id: sessionId,
+      created_by: userId,
+    });
+
+    if (!session) {
+      return res.status(404).json({message: "Сессия не найдена"});
+    }
+
+    session.session_img = null;
+    await session.save();
+
+    return res.json({
+      message: "Картинка сессии успешно удалена",
+    });
+  } catch (error) {
+    return res.status(500).json({message: "Ошибка восстановления пароля"});
+  }
+};
+
+export {getAll, getOne, create, update, remove, deleteImg};
