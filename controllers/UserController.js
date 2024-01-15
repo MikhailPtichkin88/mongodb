@@ -82,38 +82,76 @@ const me = async (req, res) => {
 const update = async (req, res) => {
   try {
     const userId = req.userId;
-    const user = await UserModel.findById(userId);
 
-    if (!user.avatarUrl && req.pictureName) {
-      await UserModel.findOneAndUpdate(
-        {_id: userId},
-        {avatarUrl: req.pictureName}
-      );
-    }
-    if (req.body.email) {
+    // if (req.body.email) {
+    //   // Проверяем, существует ли пользователь с таким email
+    //   const existingUser = await UserModel.findOne({
+    //     email: req.body.email,
+    //     _id: {$ne: userId},
+    //   });
+    //   if (existingUser) {
+    //     return res
+    //       .status(400)
+    //       .json({error: "Email уже используется другим пользователем"});
+    //   }
+
+    //   await UserModel.findOneAndUpdate({_id: userId}, {email: req.body.email});
+    // }
+
+    // if (req.body.fullName) {
+    //   await UserModel.findOneAndUpdate(
+    //     {_id: userId},
+    //     {fullName: req.body.fullName}
+    //   );
+    // }
+
+    // if (req.body.city) {
+    //   await UserModel.findOneAndUpdate(
+    //     {_id: userId},
+    //     {fullName: req.body.fullName}
+    //   );
+    // }
+
+    if (Object.keys(req.body).length > 0) {
       // Проверяем, существует ли пользователь с таким email
       const existingUser = await UserModel.findOne({
         email: req.body.email,
         _id: {$ne: userId},
       });
+
       if (existingUser) {
         return res
           .status(400)
           .json({error: "Email уже используется другим пользователем"});
       }
 
-      await UserModel.findOneAndUpdate({_id: userId}, {email: req.body.email});
-    }
+      // Создаем объект с обновленными данными пользователя на основе того, что пришло в запросе
+      const updatedUserData = {
+        email: req.body.email,
+        fullname: req.body.fullname,
+        city: req.body.city,
+        age: req.body.age,
+      };
 
-    if (req.body.fullName) {
-      await UserModel.findOneAndUpdate(
+      if (req.pictureName) {
+        updatedUserData.avatarUrl = req.pictureName;
+      }
+
+      // Обновляем данные пользователя в базе данных
+      const updatedUser = await UserModel.findOneAndUpdate(
         {_id: userId},
-        {fullName: req.body.fullName}
+        updatedUserData,
+        {new: true}
       );
-    }
 
-    const updatedUser = await UserModel.findById(userId);
-    return res.json(updatedUser);
+      if (updatedUser) {
+        return res.status(200).json(updatedUser);
+      } else {
+        return res.status(404).json({error: "Пользователь не найден"});
+      }
+    } else {
+      return res.status(400).json({error: "Данные для обновления отсутствуют"});
+    }
   } catch (err) {
     return res
       .status(500)
