@@ -12,9 +12,10 @@ const getAll = async (req, res) => {
       sortBy = "title",
       sortOrder = "desc",
       status = "all",
-      userId = req.userId,
+      role = "creator",
     } = req.query;
 
+    const userId = req.userId;
     const sortDirection = sortOrder === "desc" ? -1 : 1;
 
     const statusFilter =
@@ -24,10 +25,23 @@ const getAll = async (req, res) => {
         ? ["closed"]
         : ["opened", "in_progress", "closed"];
 
-    const totalDocs = await SessionModel.countDocuments({
-      created_by: userId,
-      status: {$in: statusFilter},
-    });
+    let totalDocs;
+    let participantIds;
+    if (role === "creator") {
+      totalDocs = await SessionModel.countDocuments({
+        created_by: userId,
+        status: {$in: statusFilter},
+      });
+    } else {
+      const matchingParticipants = await ParticipantModel.find({user: userId});
+      participantIds = matchingParticipants.map(
+        (participant) => participant._id
+      );
+      totalDocs = await SessionModel.countDocuments({
+        created_by: {$ne: userId},
+        participants: {$in: participantIds},
+      });
+    }
 
     const totalPages = Math.ceil(totalDocs / limit);
 
@@ -40,15 +54,24 @@ const getAll = async (req, res) => {
       total: totalDocs,
     };
 
-    const data = await SessionModel.find({
-      created_by: userId,
-      status: {$in: statusFilter},
-    })
-
-      .sort({[sortBy]: sortDirection})
-      .limit(Number(limit))
-      .skip((page - 1) * limit);
-
+    let data;
+    if (role === "creator") {
+      data = await SessionModel.find({
+        created_by: userId,
+        status: {$in: statusFilter},
+      })
+        .sort({[sortBy]: sortDirection})
+        .limit(Number(limit))
+        .skip((page - 1) * limit);
+    } else {
+      data = await SessionModel.find({
+        created_by: {$ne: userId},
+        participants: {$in: participantIds},
+      })
+        .sort({[sortBy]: sortDirection})
+        .limit(Number(limit))
+        .skip((page - 1) * limit);
+    }
     res.json({data, pagination});
   } catch (error) {
     console.log(error);
