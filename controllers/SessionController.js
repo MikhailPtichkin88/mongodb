@@ -13,6 +13,7 @@ const getAll = async (req, res) => {
       sortOrder = "desc",
       status = "all",
       role = "creator",
+      search = "",
     } = req.query;
 
     const userId = req.userId;
@@ -31,6 +32,7 @@ const getAll = async (req, res) => {
       totalDocs = await SessionModel.countDocuments({
         created_by: userId,
         status: {$in: statusFilter},
+        title: {$regex: new RegExp(search, "i")},
       });
     } else {
       const matchingParticipants = await ParticipantModel.find({user: userId});
@@ -40,6 +42,7 @@ const getAll = async (req, res) => {
       totalDocs = await SessionModel.countDocuments({
         created_by: {$ne: userId},
         participants: {$in: participantIds},
+        title: {$regex: new RegExp(search, "i")},
       });
     }
 
@@ -59,6 +62,7 @@ const getAll = async (req, res) => {
       data = await SessionModel.find({
         created_by: userId,
         status: {$in: statusFilter},
+        title: {$regex: new RegExp(search, "i")},
       })
         .sort({[sortBy]: sortDirection})
         .limit(Number(limit))
@@ -67,6 +71,7 @@ const getAll = async (req, res) => {
       data = await SessionModel.find({
         created_by: {$ne: userId},
         participants: {$in: participantIds},
+        title: {$regex: new RegExp(search, "i")},
       })
         .sort({[sortBy]: sortDirection})
         .limit(Number(limit))
