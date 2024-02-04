@@ -197,7 +197,6 @@ const remove = async (req, res) => {
 
     return res.json(sessions);
   } catch (error) {
-    console.log(error);
     res.status(500).json({message: "Не удалось удалить сессию"});
   }
 };
@@ -205,18 +204,47 @@ const remove = async (req, res) => {
 const update = async (req, res) => {
   try {
     const sessionId = req.params.sessionId;
+    const userId = req.userId;
+
+    const session = await SessionModel.findOne({
+      _id: sessionId,
+      created_by: userId,
+    });
+
+    if (!session) {
+      res.status(404).json({message: "Не удалось найти сессию"});
+    }
+
+    if (
+      req.body?.total_participants &&
+      session.status === "in_progress" &&
+      req.body.total_participants < session?.participants?.length
+    ) {
+      res.status(403).json({
+        message:
+          "Количество участников не может быть меньше уже участвующих в сессии",
+      });
+    }
+
+    const updatedUserData = {
+      title: req.body.title,
+      session_info: req.body.session_info,
+      total_participants: req.body.total_participants,
+    };
+
+    if (req.pictureName) {
+      updatedUserData.session_img = req.pictureName;
+    }
+
+    // Обновляем данные пользователя в базе данных
     const updatedSession = await SessionModel.findOneAndUpdate(
-      {_id: sessionId},
-      {
-        title: req.body.title,
-        session_img: req.pictureName,
-        session_info: req.body.session_info,
-      },
-      {returnDocument: "after"}
+      {_id: sessionId, created_by: userId},
+      updatedUserData,
+      {new: true}
     );
+
     return res.json(updatedSession);
   } catch (error) {
-    console.log(error);
     res.status(500).json({message: "Не удалось обновить статью"});
   }
 };
