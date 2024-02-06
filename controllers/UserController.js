@@ -102,7 +102,7 @@ const update = async (req, res) => {
     // Создаем объект с обновленными данными пользователя на основе того, что пришло в запросе
     const updatedUserData = {
       email: req.body.email,
-      fullname: req.body.fullname,
+      fullName: req.body.fullName,
       city: req.body.city,
       age: req.body.age,
     };
