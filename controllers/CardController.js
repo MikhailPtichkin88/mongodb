@@ -1,6 +1,6 @@
 import CardModel from "../models/Card.js";
 import SessionModel from "../models/Session.js";
-import ParicipantModel from "../models/Participant.js";
+import ParticipantModel from "../models/Participant.js";
 import path from "path";
 import fs from "fs";
 
@@ -22,15 +22,24 @@ const create = async (req, res) => {
   try {
     const session = await SessionModel.findOne({_id: req.body.sessionId});
 
-    if (session && session.created_by?.toString() !== req.userId) {
-      return res
-        .status(403)
-        .json({error: "Создавать карту может только создатель сессии"});
-    }
     if (session && session.cards?.length === session.total_participants) {
       return res.status(400).json({
         error: "Количество карт не должно быть больше количества участников",
       });
+    }
+
+    const participants = await ParticipantModel.find({
+      session_id: req.body.sessionId,
+    }).populate({path: "user", select: "_id"});
+
+    const participant = participants?.find(
+      (el) => el.user._id?.toString() === req.userId
+    );
+
+    if (!participant) {
+      return res
+        .status(403)
+        .json({error: "Создавать карту может только участник сессии"});
     }
 
     const doc = new CardModel({
@@ -38,12 +47,14 @@ const create = async (req, res) => {
       session_id: req.body.sessionId,
       title: req.body.title,
     });
-    const card = await doc.save();
 
+    const card = await doc.save();
     session.cards = [...session.cards, card._id];
     await session.save();
+    participant.has_picked_own_card = true;
+    await participant.save();
 
-    res.json(card);
+    res.json({card, participant});
   } catch (error) {
     console.log(error);
     res.status(500).json({message: "Не удалось создать карточку"});
@@ -151,7 +162,7 @@ const remove = async (req, res) => {
     }
 
     if (deleteCard.user_id) {
-      const participant = await ParicipantModel.findOne({
+      const participant = await ParticipantModel.findOne({
         session_id: session._id,
         user: deleteCard.user_id,
       });
@@ -202,7 +213,7 @@ const chooseCard = async (req, res) => {
     await selectedCard.save();
 
     // обновление Participant
-    const participant = await ParicipantModel.findOne({_id: participantId});
+    const participant = await ParticipantModel.findOne({_id: participantId});
     if (!participant) {
       return res.status(500).json({error: "Ошибка при обновлении участника"});
     }
