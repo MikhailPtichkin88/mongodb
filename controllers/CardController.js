@@ -32,9 +32,15 @@ const create = async (req, res) => {
       session_id: req.body.sessionId,
     });
 
-    const participant = participants?.find(
-      (el) => el?.user?.toString() === req.userId
-    );
+    console.log(participants);
+    console.log(req.userId);
+
+    const participant = participants?.find((el) => {
+      console.log(el?.user);
+      console.log(el?.user?.toString());
+      console.log(req.userId);
+      return el?.user?.toString() === req.userId;
+    });
 
     if (!participant) {
       return res
