@@ -32,20 +32,14 @@ const create = async (req, res) => {
       session_id: req.body.sessionId,
     });
 
-    console.log(participants);
-    console.log(req.userId);
-
     const participant = participants?.find((el) => {
-      console.log(el?.user);
-      console.log(el?.user?.toString());
-      console.log(req.userId);
       return el?.user?.toString() === req.userId;
     });
 
     if (!participant) {
       return res
         .status(403)
-        .json({error: "Создавать карту может только участник сессии"});
+        .json({error: "Создавать карточку может только участник сессии"});
     }
 
     const alreadyExistCard = await CardModel.findOne({
@@ -54,7 +48,7 @@ const create = async (req, res) => {
     });
 
     if (alreadyExistCard) {
-      return res.status(403).json({error: "Вы уже создали свою карту"});
+      return res.status(403).json({error: "Вы уже создали свою карточку"});
     }
 
     const doc = new CardModel({
@@ -64,8 +58,7 @@ const create = async (req, res) => {
     });
 
     const card = await doc.save();
-    session.cards = [...session.cards, card._id];
-    await session.save();
+
     participant.has_picked_own_card = true;
     await participant.save();
 
@@ -78,8 +71,18 @@ const create = async (req, res) => {
 
 const update = async (req, res) => {
   try {
-    // const sessionId = req.query.session_id;
     const cardId = req.params.cardId;
+
+    const card = await CardModel.findOne({
+      _id: cardId,
+    });
+
+    if (card && card?.created_by?.toString() !== req.userId) {
+      return res
+        .status(403)
+        .json({error: "Менять карточку может только ее создатель"});
+    }
+
     const updatedCard = await CardModel.findOneAndUpdate(
       {_id: cardId},
       {
@@ -106,7 +109,7 @@ const remove = async (req, res) => {
     if (card && card?.created_by?.toString() !== req.userId) {
       return res
         .status(403)
-        .json({error: "Удалять карту может только ее создатель"});
+        .json({error: "Удалять карточку может только ее создатель"});
     }
 
     if (card?.card_img) {
@@ -164,8 +167,7 @@ const remove = async (req, res) => {
 
     if (!deleteCard) {
       return res.status(500).json({
-        message:
-          "Ошибка при удалении карты (карта уже удалена или не существует)",
+        message: "Ошибка при удалении карточки (уже удалена или не существует)",
       });
     }
 
