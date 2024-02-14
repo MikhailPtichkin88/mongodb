@@ -30,16 +30,25 @@ const create = async (req, res) => {
 
     const participants = await ParticipantModel.find({
       session_id: req.body.sessionId,
-    }).populate({path: "user", select: "_id"});
+    });
 
     const participant = participants?.find(
-      (el) => el.user._id?.toString() === req.userId
+      (el) => el?.user?.toString() === req.userId
     );
 
     if (!participant) {
       return res
         .status(403)
         .json({error: "Создавать карту может только участник сессии"});
+    }
+
+    const alreadyExistCard = await CardModel.findOne({
+      session_id: req.body.sessionId,
+      created_by: req.userId,
+    });
+
+    if (alreadyExistCard) {
+      return res.status(403).json({error: "Вы уже создали свою карту"});
     }
 
     const doc = new CardModel({
@@ -84,24 +93,17 @@ const update = async (req, res) => {
 
 const remove = async (req, res) => {
   try {
-    const session = await SessionModel.findOne({
-      _id: req.query.sessionId,
-    }).populate({
-      path: "participants",
-      populate: {path: "user", select: "_id"},
-    });
-
-    if (session.created_by?.toString() !== req.userId) {
-      return res
-        .status(403)
-        .json({message: "Удалить карточку может только создатель сессии"});
-    }
-
     const card = await CardModel.findOne({
       _id: req.params.cardId,
     });
 
-    if (card.card_img) {
+    if (card && card?.created_by?.toString() !== req.userId) {
+      return res
+        .status(403)
+        .json({error: "Удалять карту может только ее создатель"});
+    }
+
+    if (card?.card_img) {
       const directory = `uploads/cards/${req.query.sessionId}`;
       fs.readdir(directory, (err, files) => {
         if (err) {
@@ -157,31 +159,20 @@ const remove = async (req, res) => {
     if (!deleteCard) {
       return res.status(500).json({
         message:
-          "Ошибка при поиске карты (карта уже удалена или не существует)",
+          "Ошибка при удалении карты (карта уже удалена или не существует)",
       });
     }
 
     if (deleteCard.user_id) {
       const participant = await ParticipantModel.findOne({
-        session_id: session._id,
+        session_id: req.query.sessionId,
         user: deleteCard.user_id,
       });
 
       participant.has_picked_own_card = false;
 
-      session.participants = session.participants.map((participant) => {
-        return participant.user?._id?.toString() ===
-          deleteCard.user_id?.toString()
-          ? {...participant, has_picked_own_card: false}
-          : participant;
-      });
-
       await participant.save();
     }
-    session.cards = session.cards?.filter((id) => {
-      return id?.toString() !== req.params.cardId;
-    });
-    await session.save();
 
     const cards = await CardModel.find({session_id: req.query.sessionId});
 
