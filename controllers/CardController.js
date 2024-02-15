@@ -171,10 +171,10 @@ const remove = async (req, res) => {
       });
     }
 
-    if (deleteCard.user_id) {
+    if (deleteCard.created_by) {
       const participant = await ParticipantModel.findOne({
         session_id: req.query.sessionId,
-        user: deleteCard.user_id,
+        user: deleteCard.created_by,
       });
 
       participant.has_picked_own_card = false;
@@ -199,7 +199,7 @@ const chooseCard = async (req, res) => {
 
     const filteredCards = await CardModel.find({
       session_id: sessionId,
-      user_id: {$ne: userId},
+      created_by: {$ne: userId},
       selected_by: {$exists: false},
     });
 
