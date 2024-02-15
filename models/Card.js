@@ -24,7 +24,7 @@ const CardSchema = new mongoose.Schema(
     },
     // привязка к юзеру, который изображен на этой карте
     // функционал "отметь себя, перед тем как выбрать карту"
-    user_id: {
+    user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },

@@ -5,11 +5,7 @@ import {
   checkAuth,
   savePicture,
 } from "../utils/index.js";
-import {
-  titleAndDescrValidation,
-  // bindUserValidation,
-  selectCardValidation,
-} from "../validations.js";
+import {titleAndDescrValidation, selectCardValidation} from "../validations.js";
 import multer from "multer";
 import fs from "fs";
 

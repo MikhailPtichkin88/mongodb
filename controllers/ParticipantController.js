@@ -71,46 +71,6 @@ const create = async (req, res) => {
   }
 };
 
-const bindUser = async (req, res) => {
-  const {card_id, bind_user_id, session_id} = req.body;
-
-  const updatedCard = await CardModel.findOne({_id: card_id});
-  const updatedParticipant = await ParticipantModel.findOne({
-    user: req.userId,
-    session_id,
-  });
-
-  //функционал удаления отметки своей карты
-  if (!bind_user_id) {
-    try {
-      updatedCard.user_id = null;
-      updatedParticipant.has_picked_own_card = false;
-
-      await updatedCard.save();
-      await updatedParticipant.save();
-
-      return res.json(updatedParticipant);
-    } catch (error) {
-      return res
-        .status(500)
-        .json({message: "Ошибка удаления выбора своей карты"});
-    }
-  }
-
-  try {
-    updatedCard.user_id = req.userId;
-    updatedParticipant.has_picked_own_card = true;
-
-    await updatedCard.save();
-    await updatedParticipant.save();
-
-    return res.json(updatedParticipant);
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({message: "Ошибка выбора своей карты"});
-  }
-};
-
 const remove = async (req, res) => {
   try {
     const participantId = req.query.participantId;
@@ -142,4 +102,4 @@ const remove = async (req, res) => {
   }
 };
 
-export {getAll, bindUser, create, remove};
+export {getAll, create, remove};

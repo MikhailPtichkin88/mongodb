@@ -43,17 +43,6 @@ export const titleAndDescrValidation = [
     .isString(),
 ];
 
-export const bindUserValidation = [
-  body("user_id").custom((value) => {
-    if (!mongoose.Types.ObjectId.isValid(value)) {
-      throw new Error(
-        "У ключа 'user_id' неверный формат ID или ключ отсутствует"
-      );
-    }
-    return true;
-  }),
-];
-
 export const selectCardValidation = [
   query("sessionId").custom((value) => {
     if (!mongoose.Types.ObjectId.isValid(value)) {

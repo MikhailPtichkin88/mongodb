@@ -9,9 +9,15 @@ const getAll = async (req, res) => {
   try {
     const cards = await CardModel.find({
       session_id: req.query.sessionId,
-    }).select("-selected_by");
+    }).populate({path: "user", select: "_id fullName avatarUrl"});
 
-    res.json(cards);
+    cards.forEach((card) => {
+      if (card.selected_by && card.selected_by.toString() !== req.userId) {
+        delete card.selected_by;
+      }
+    });
+
+    return res.json(cards);
   } catch (error) {
     console.log(error);
     res.status(500).json({message: "Не удалось получить cессии"});
@@ -53,6 +59,7 @@ const create = async (req, res) => {
 
     const doc = new CardModel({
       created_by: req.userId,
+      user: req.userId,
       session_id: req.body.sessionId,
       title: req.body.title,
     });
@@ -62,7 +69,12 @@ const create = async (req, res) => {
     participant.has_picked_own_card = true;
     await participant.save();
 
-    res.json({card, participant});
+    const updatedCard = await CardModel.findOne({_id: card._id}).populate({
+      path: "user",
+      select: "_id avatarUrl fullName",
+    });
+
+    res.json({card: updatedCard, participant});
   } catch (error) {
     console.log(error);
     res.status(500).json({message: "Не удалось создать карточку"});
@@ -252,11 +264,4 @@ const chooseCard = async (req, res) => {
   }
 };
 
-export {
-  getAll,
-  update,
-  remove,
-  create,
-  // bindUser,
-  chooseCard,
-};
+export {getAll, update, remove, create, chooseCard};
