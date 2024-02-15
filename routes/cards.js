@@ -12,6 +12,7 @@ import fs from "fs";
 export const router = new Router();
 
 router.get("/", checkAuth, CardController.getAll);
+router.get("/:cardId", checkAuth, CardController.getOne);
 
 router.get(
   "/chooseCard",

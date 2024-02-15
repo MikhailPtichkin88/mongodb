@@ -24,6 +24,22 @@ const getAll = async (req, res) => {
   }
 };
 
+const getOne = async (req, res) => {
+  try {
+    const {cardId} = req.params;
+
+    const card = await CardModel.findOne({
+      _id: cardId,
+      created_by: req.userId,
+    }).populate({path: "user", select: "_id fullName avatarUrl"});
+
+    return res.json(card);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({message: "Не удалось получить cессии"});
+  }
+};
+
 const create = async (req, res) => {
   try {
     const session = await SessionModel.findOne({_id: req.body.sessionId});
@@ -264,4 +280,4 @@ const chooseCard = async (req, res) => {
   }
 };
 
-export {getAll, update, remove, create, chooseCard};
+export {getAll, update, remove, create, chooseCard, getOne};
