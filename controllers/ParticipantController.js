@@ -116,42 +116,26 @@ const remove = async (req, res) => {
     const participantId = req.query.participantId;
     const userId = req.userId;
 
-    const participantToDelete = await ParticipantModel.findOne({
+    const deletedParticipant = await ParticipantModel.findOneAndDelete({
       _id: participantId,
+      user: userId,
     });
-    if (!participantToDelete) {
+    if (!deletedParticipant) {
       return res
         .status(404)
         .json({message: "Некорректный id участника (ошибка поиска)"});
     }
-    const sessionId = participantToDelete.session_id;
 
-    if (participantToDelete.has_picked_random_card) {
-      return res
-        .status(403)
-        .json({message: "Нельзя удалить участника, который уже выбрал карту"});
+    const hasCreatedCard = deletedParticipant.has_picked_own_card;
+    let deletedCard;
+    if (hasCreatedCard) {
+      deletedCard = await CardModel.findOneAndDelete({
+        session_id: deletedParticipant.session_id,
+        created_by: deletedParticipant.user,
+      });
     }
 
-    const session = await SessionModel.findOne({_id: sessionId}).populate({
-      path: "participants",
-      populate: {path: "user", select: "fullName avatarUrl _id"},
-    });
-
-    if (session && session.created_by?.toString() !== userId) {
-      return res
-        .status(403)
-        .json({message: "Удалять участников может только создатель сессии"});
-    }
-
-    await ParticipantModel.deleteOne({_id: participantToDelete._id});
-    session.participants = session.participants?.filter((participant) => {
-      return (
-        participant._id?.toString() !== participantToDelete._id?.toString()
-      );
-    });
-
-    await session?.save();
-    return res.json(session.participants);
+    return res.json({deletedParticipant, deletedCard});
   } catch (error) {
     console.log(error);
     res.status(500).json({message: "Не удалось удалить участника"});
