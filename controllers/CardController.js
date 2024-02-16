@@ -30,8 +30,15 @@ const getOne = async (req, res) => {
 
     const card = await CardModel.findOne({
       _id: cardId,
-      created_by: req.userId,
     }).populate({path: "user", select: "_id fullName avatarUrl"});
+
+    if (
+      card &&
+      card?.selected_by &&
+      card.selected_by.toString() !== req.userId
+    ) {
+      delete card.selected_by;
+    }
 
     return res.json(card);
   } catch (error) {
@@ -120,7 +127,8 @@ const update = async (req, res) => {
         session_id: req.query.sessionId,
       },
       {returnDocument: "after"}
-    );
+    ).populate({path: "user", select: "_id fullName avatarUrl"});
+
     return res.json(updatedCard);
   } catch (error) {
     console.log(error);
