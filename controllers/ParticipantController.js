@@ -99,7 +99,7 @@ const remove = async (req, res) => {
 
     await CommnetModal.deleteMany({
       session_id: deletedParticipant.session_id,
-      user: req.userId,
+      user: deletedParticipant.user,
     });
 
     return res.json({deletedParticipant, deletedCard});
