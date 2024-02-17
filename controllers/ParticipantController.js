@@ -29,16 +29,20 @@ const create = async (req, res) => {
         .json({message: "Сессии не существует, или она была удалена"});
     }
 
-    if (session.participants?.length === session.total_participants) {
+    const participants = await ParticipantModel.find({
+      session_id: req.body.session_id,
+    }).populate({path: "user", select: "_id"});
+
+    if (!participants) {
+      return res.status(500).json({message: "Ошибка получения участников"});
+    }
+
+    if (participants?.length === session.total_participants) {
       return res.status(403).json({
         message:
           "Достигнуто максимальное количество участников в рамках сессии",
       });
     }
-
-    const participants = await ParticipantModel.find({
-      session_id: req.body.session_id,
-    }).populate({path: "user", select: "_id"});
 
     if (
       participants?.find((participant) => {
@@ -56,10 +60,7 @@ const create = async (req, res) => {
       has_picked_own_card: false,
       has_picked_random_card: false,
     });
-    const participant = await doc.save();
-
-    session.participants = [...participants.map((p) => p._id), participant._id];
-    await session.save();
+    await doc.save();
 
     const updatedParticipants = await ParticipantModel.find({
       session_id: req.body.session_id,
