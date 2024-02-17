@@ -1,6 +1,7 @@
 import ParticipantModel from "../models/Participant.js";
 import SessionModel from "../models/Session.js";
 import CardModel from "../models/Card.js";
+import CommnetModal from "../models/Card.js";
 
 const getAll = async (req, res) => {
   const sessionId = req.query.sessionId;
@@ -94,6 +95,11 @@ const remove = async (req, res) => {
         created_by: deletedParticipant.user,
       });
     }
+
+    await CommnetModal.deleteMany({
+      session_id: deletedParticipant.session_id,
+      user: req.userId,
+    });
 
     return res.json({deletedParticipant, deletedCard});
   } catch (error) {

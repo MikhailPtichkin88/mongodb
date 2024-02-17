@@ -5,7 +5,7 @@ const getAll = async (req, res) => {
   try {
     const comments = await CommentModel.find({session_id: sessionId}).populate({
       path: "user",
-      select: "_id avatarUrl fullName",
+      select: "_id avatarUrl fullName email",
     });
     res.json(comments);
   } catch (error) {
@@ -28,7 +28,7 @@ const create = async (req, res) => {
 
     const comments = await CommentModel.find({session_id: sessionId}).populate({
       path: "user",
-      select: "_id avatarUrl fullName",
+      select: "_id avatarUrl fullName email",
     });
 
     res.json(comments);
@@ -53,7 +53,7 @@ const edit = async (req, res) => {
       user: req.userId,
     }).populate({
       path: "user",
-      select: "_id avatarUrl fullName",
+      select: "_id avatarUrl fullName email",
     });
     if (!comment) {
       return res.status(400).json({message: "Комментарий не найден"});
