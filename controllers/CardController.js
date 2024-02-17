@@ -9,7 +9,7 @@ const getAll = async (req, res) => {
   try {
     const cards = await CardModel.find({
       session_id: req.query.sessionId,
-    }).populate({path: "user", select: "_id fullName avatarUrl"});
+    }).populate({path: "user", select: "_id fullName avatarUrl email"});
 
     cards.forEach((card) => {
       if (card.selected_by && card.selected_by.toString() !== req.userId) {
@@ -30,7 +30,7 @@ const getOne = async (req, res) => {
 
     const card = await CardModel.findOne({
       _id: cardId,
-    }).populate({path: "user", select: "_id fullName avatarUrl"});
+    }).populate({path: "user", select: "_id fullName avatarUrl email"});
 
     if (
       card &&
@@ -94,7 +94,7 @@ const create = async (req, res) => {
 
     const updatedCard = await CardModel.findOne({_id: card._id}).populate({
       path: "user",
-      select: "_id avatarUrl fullName",
+      select: "_id avatarUrl fullName email",
     });
 
     res.json({card: updatedCard, participant});
@@ -127,7 +127,7 @@ const update = async (req, res) => {
         session_id: req.query.sessionId,
       },
       {returnDocument: "after"}
-    ).populate({path: "user", select: "_id fullName avatarUrl"});
+    ).populate({path: "user", select: "_id fullName avatarUrl email"});
 
     return res.json(updatedCard);
   } catch (error) {

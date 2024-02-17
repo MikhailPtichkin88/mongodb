@@ -7,7 +7,7 @@ const getAll = async (req, res) => {
   try {
     const participants = await ParticipantModel.find({
       session_id: sessionId,
-    }).populate({path: "user", select: "_id fullName avatarUrl"});
+    }).populate({path: "user", select: "_id fullName avatarUrl email"});
 
     res.json(participants);
   } catch (error) {
@@ -62,7 +62,7 @@ const create = async (req, res) => {
 
     const updatedParticipants = await ParticipantModel.find({
       session_id: req.body.session_id,
-    }).populate({path: "user", select: "_id fullName avatarUrl"});
+    }).populate({path: "user", select: "_id fullName avatarUrl email"});
 
     res.json(updatedParticipants);
   } catch (error) {
