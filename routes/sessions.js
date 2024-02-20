@@ -15,6 +15,7 @@ export const router = new Router();
 router.get("/", checkAuth, SessionController.getAll);
 
 router.get("/:sessionId", checkAuth, SessionController.getOne);
+router.get("/:sessionId/chooseCards", checkAuth, SessionController.chooseCards);
 
 router.post(
   "/",

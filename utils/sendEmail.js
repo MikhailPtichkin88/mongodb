@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 
-const sendEmail = async (email, token) => {
+const sendEmail = async (email, token, type = "token") => {
   let transporter = nodemailer.createTransport({
     host: "smtp.mail.ru",
     port: 465,
@@ -11,6 +11,11 @@ const sendEmail = async (email, token) => {
     },
   });
 
+  const title =
+    type === "token"
+      ? "Secret Santa - восстановление пароля"
+      : "Secret Santa - проведена жеребьевка";
+
   transporter.verify(function (error, success) {
     if (error) {
       console.log(error);
@@ -19,22 +24,29 @@ const sendEmail = async (email, token) => {
         .sendMail({
           from: process.env.SMTP_EMAIL,
           to: email,
-          subject: "Secret Santa - восстановление пароля",
-          html: createMarkup(token),
+          subject: title,
+          html: createMarkup(token, type),
         })
         .catch((err) => console.log("Ошибка отправления письма", err));
     }
   });
 };
 
-function createMarkup(token) {
-  return `
+function createMarkup(token, type) {
+  return type === "token"
+    ? `
   <div style="max-width: 600px; margin: 20px auto; padding: 20px; background-color: #f4f4f4; border-radius: 10px; box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);">
   <div style="font-family: Arial, sans-serif; color: #333;">
     <div style="font-size: 20px; font-weight: bold; margin-bottom: 20px;">Для восстановления пароля перейдите по ссылке:</div>
     <a href="${process.env.BASE_URL}/setNewPassword?token=${token}" style="display: inline-block; padding: 15px 25px; text-decoration: none; background-color: #6b9dbb; color: #fff; border-radius: 5px;">Восстановить пароль</a>
   </div>
 </div>
-`;
+`
+    : `  <div style="max-width: 600px; margin: 20px auto; padding: 20px; background-color: #f4f4f4; border-radius: 10px; box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);">
+<div style="font-family: Arial, sans-serif; color: #333;">
+  <div style="font-size: 20px; font-weight: bold; margin-bottom: 20px;">Поздравляем, Вы - тайный санта :) подробности по ссылке:</div>
+  <a href="${process.env.BASE_URL}/session/${token}" style="display: inline-block; padding: 15px 25px; text-decoration: none; background-color: #6b9dbb; color: #fff; border-radius: 5px;">Восстановить пароль</a>
+</div>
+</div>`;
 }
 export default sendEmail;

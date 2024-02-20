@@ -11,13 +11,18 @@ const getAll = async (req, res) => {
       session_id: req.query.sessionId,
     }).populate({path: "user", select: "_id fullName avatarUrl email"});
 
-    cards.forEach((card) => {
-      if (card.selected_by && card.selected_by.toString() !== req.userId) {
-        delete card.selected_by;
+    const cardsWithoutSelectedBy = cards.map((card) => {
+      const cardObj = card.toObject();
+      if (
+        cardObj.selected_by &&
+        cardObj.selected_by.toString() !== req.userId
+      ) {
+        delete cardObj.selected_by;
       }
+      return cardObj;
     });
 
-    return res.json(cards);
+    return res.json(cardsWithoutSelectedBy);
   } catch (error) {
     console.log(error);
     res.status(500).json({message: "Не удалось получить cессии"});

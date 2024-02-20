@@ -3,6 +3,7 @@ import CardModel from "../models/Card.js";
 import ParticipantModel from "../models/Participant.js";
 import fs from "fs";
 import path from "path";
+import {sendEmail} from "../utils/index.js";
 
 const getAll = async (req, res) => {
   try {
@@ -245,7 +246,7 @@ const update = async (req, res) => {
 
     return res.json(updatedSession);
   } catch (error) {
-    res.status(500).json({message: "Не удалось обновить статью"});
+    res.status(500).json({message: "Не удалось обновить сессию"});
   }
 };
 
@@ -270,8 +271,81 @@ const deleteImg = async (req, res) => {
       message: "Картинка сессии успешно удалена",
     });
   } catch (error) {
-    return res.status(500).json({message: "Ошибка восстановления пароля"});
+    return res.status(500).json({message: "Ошибка удаления картинки сессии"});
   }
 };
 
-export {getAll, getOne, create, update, remove, deleteImg};
+const chooseCards = async (req, res) => {
+  try {
+    const sessionId = req.params.sessionId;
+    const userId = req.userId;
+
+    const session = await SessionModel.findOne({_id: sessionId});
+    if (!session) {
+      return res.status(404).json({message: "Сессия не найдена"});
+    }
+    if (session.created_by?.toString() !== userId) {
+      return res
+        .status(403)
+        .json({message: "Разыграть карты может только создатель сессии"});
+    }
+    const participants = await ParticipantModel.find({
+      session_id: sessionId,
+    }).populate({path: "user", select: "_id email"});
+
+    if (!participants && !participants.length) {
+      return res.status(404).json({message: "Ошибка получения участников"});
+    }
+
+    let users = [];
+    let emails = [];
+    participants.forEach((participant) => {
+      if (!participant.has_picked_own_card) {
+        return res
+          .status(403)
+          .json({message: "Не все участники создали свои карточки"});
+      }
+      users.push(participant?.user?._id?.toString());
+      emails.push(participant?.user?.email);
+    });
+
+    const cards = await CardModel.find({session_id: sessionId});
+    if (!cards && !cards.length) {
+      return res.status(403).json({message: "Ошибка получения карт"});
+    }
+    if (cards.length !== session.total_participants) {
+      return res.status(403).json({
+        message: "Количество карт не соответствует количеству участников",
+      });
+    }
+
+    let mySelectedCard = {};
+    for (const card of cards) {
+      const filterdUsers = users?.filter(
+        (id) => id !== card?.created_by?.toString()
+      );
+      const selectedBy =
+        filterdUsers[Math.floor(Math.random() * filterdUsers.length)];
+
+      users = users.filter((id) => id !== selectedBy);
+
+      await CardModel.findOneAndUpdate(
+        {_id: card._id},
+        {selected_by: selectedBy}
+      );
+      if (selectedBy === userId) {
+        mySelectedCard = {...card?.toObject(), selected_by: selectedBy};
+      }
+    }
+
+    session.status = "closed";
+    await session.save();
+
+    await sendEmail(emails, session._id?.toString(), "select");
+    return res.json({session, mySelectedCard});
+  } catch (error) {
+    return res.status(500).json({message: "Ошибка жеребьевки"});
+  }
+};
+
+export {getAll, getOne, create, update, remove, deleteImg, chooseCards};
