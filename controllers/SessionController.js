@@ -28,7 +28,8 @@ const getAll = async (req, res) => {
         : ["opened", "in_progress", "closed"];
 
     let totalDocs;
-    let participantIds;
+    let sessionsIds = [];
+
     if (role === "creator") {
       totalDocs = await SessionModel.countDocuments({
         created_by: userId,
@@ -37,12 +38,16 @@ const getAll = async (req, res) => {
       });
     } else {
       const matchingParticipants = await ParticipantModel.find({user: userId});
-      participantIds = matchingParticipants.map(
-        (participant) => participant._id
-      );
+
+      matchingParticipants.forEach((participant) => {
+        if (!sessionsIds.includes(participant?.session_id?.toString())) {
+          sessionsIds.push(participant.session_id.toString());
+        }
+      });
+
       totalDocs = await SessionModel.countDocuments({
+        _id: {$in: sessionsIds},
         created_by: {$ne: userId},
-        participants: {$in: participantIds},
         title: {$regex: new RegExp(search, "i")},
       });
     }
@@ -70,8 +75,8 @@ const getAll = async (req, res) => {
         .skip((page - 1) * limit);
     } else {
       data = await SessionModel.find({
+        _id: {$in: sessionsIds},
         created_by: {$ne: userId},
-        participants: {$in: participantIds},
         title: {$regex: new RegExp(search, "i")},
       })
         .sort({[sortBy]: sortDirection})
