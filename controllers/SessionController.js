@@ -284,6 +284,11 @@ const chooseCards = async (req, res) => {
     if (!session) {
       return res.status(404).json({message: "Сессия не найдена"});
     }
+    if (session.status === "closed") {
+      return res
+        .status(403)
+        .json({message: "Разыграть карты можно только в активной сессии"});
+    }
     if (session.created_by?.toString() !== userId) {
       return res
         .status(403)
