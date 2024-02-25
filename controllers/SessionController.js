@@ -350,7 +350,7 @@ const chooseCards = async (req, res) => {
 
     session.status = "closed";
     await session.save();
-
+    console.log(emails);
     await sendEmail(emails, session._id?.toString(), "select");
     return res.json({session, mySelectedCard});
   } catch (error) {

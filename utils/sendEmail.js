@@ -16,6 +16,8 @@ const sendEmail = async (email, token, type = "token") => {
       ? "Secret Santa - восстановление пароля"
       : "Secret Santa - проведена жеребьевка";
 
+  console.log(title);
+  console.log(createMarkup(token, type));
   transporter.verify(function (error, success) {
     if (error) {
       console.log(error);
