@@ -3,8 +3,8 @@ import nodemailer from "nodemailer";
 const sendEmail = async (email, token, type = "token") => {
   let transporter = nodemailer.createTransport({
     host: "smtp.mail.ru",
-    port: 587,
-    secure: false, // true для 465 порта, false для других портов
+    port: 465,
+    secure: true, // true для 465 порта, false для других портов
     auth: {
       user: process.env.SMTP_LOGIN,
       pass: process.env.SMTP_PASSWORD,
@@ -16,8 +16,6 @@ const sendEmail = async (email, token, type = "token") => {
       ? "Secret Santa - восстановление пароля"
       : "Secret Santa - проведена жеребьевка";
 
-  console.log(title);
-  console.log(createMarkup(token, type));
   transporter.verify(function (error, success) {
     if (error) {
       console.log(error);
