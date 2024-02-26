@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start:prod": "cross-env BASE_URL=https://ptichkinproject.ru/mongodb_project node index.js",
+    "start:prod": "cross-env BASE_URL=https://ptichkinproject.ru node index.js",
     "start:dev": "cross-env BASE_URL=http://localhost:3020 nodemon index.js"
   },
   "keywords": [],
