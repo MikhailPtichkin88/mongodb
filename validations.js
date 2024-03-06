@@ -29,18 +29,18 @@ export const titleAndDescrValidation = [
     .optional()
     .isLength({min: 3})
     .isString(),
-  body("session_info", "Описание сессии должно быть более 3 символов")
-    .optional()
-    .isLength({
-      min: 3,
-    })
-    .isString(),
-  body("card_info", "Описание Карточки должно быть более 3 символов")
-    .optional()
-    .isLength({
-      min: 3,
-    })
-    .isString(),
+  // body("session_info", "Описание сессии должно быть более 3 символов")
+  //   .optional()
+  //   .isLength({
+  //     min: 3,
+  //   })
+  //   .isString(),
+  // body("card_info", "Описание Карточки должно быть более 3 символов")
+  //   .optional()
+  //   .isLength({
+  //     min: 3,
+  //   })
+  //   .isString(),
 ];
 
 export const selectCardValidation = [
