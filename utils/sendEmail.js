@@ -45,7 +45,7 @@ function createMarkup(token, type) {
     : `  <div style="max-width: 600px; margin: 20px auto; padding: 20px; background-color: #f4f4f4; border-radius: 10px; box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);">
 <div style="font-family: Arial, sans-serif; color: #333;">
   <div style="font-size: 20px; font-weight: bold; margin-bottom: 20px;">Поздравляем, Вы - тайный санта :) подробности по ссылке:</div>
-  <a href="${process.env.BASE_URL}/session/${token}" style="display: inline-block; padding: 15px 25px; text-decoration: none; background-color: #6b9dbb; color: #fff; border-radius: 5px;">Восстановить пароль</a>
+  <a href="${process.env.BASE_URL}/session/${token}" style="display: inline-block; padding: 15px 25px; text-decoration: none; background-color: #6b9dbb; color: #fff; border-radius: 5px;">Перейти в приложение</a>
 </div>
 </div>`;
 }
