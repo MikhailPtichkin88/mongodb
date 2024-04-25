@@ -9,3 +9,5 @@ router.post("/toSanta", checkAuth, MessageController.sendMessageToSanta);
 
 router.get("/fromSanta", checkAuth, MessageController.getMessagesFromSanta);
 router.post("/fromSanta", checkAuth, MessageController.sendMessageFromSanta);
+
+router.patch("/", checkAuth, MessageController.editMessage);

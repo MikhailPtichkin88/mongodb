@@ -70,8 +70,13 @@ const getMessagesFromSanta = async (req, res) => {
   try {
     const messages = await Message.find({
       session_id: sessionId,
-      $or: [{card_from: cardId}, {card_from: cardToId}],
-    });
+    })
+      .or([
+        {card_from: cardId, card_to: cardToId},
+        {card_from: cardToId, card_to: cardId},
+      ])
+      .lean();
+
     res.json(messages);
   } catch (error) {
     console.log(error);
@@ -115,9 +120,39 @@ const getMessagesToSanta = async (req, res) => {
   }
 };
 
+const editMessage = async (req, res) => {
+  const {messageId, sessionId, text} = req.body;
+  const userId = req.userId;
+  const card = await Card.findOne({
+    session_id: sessionId,
+    created_by: userId,
+  }).lean();
+  try {
+    if (!messageId || !text) {
+      return res.status(400).send("Нет необходимых данных");
+    }
+    const message = await Message.findById(messageId);
+    if (!message) {
+      return res.status(404).send("Сообщение не найдено");
+    }
+
+    if (message.card_from?.toString() !== card?._id?.toString()) {
+      return res
+        .status(404)
+        .send("Менять сообщение может только его создатель");
+    }
+    message.text = text;
+    await message.save();
+    res.send("Сообщение успешно обновлено");
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+};
+
 export {
   sendMessageFromSanta,
   sendMessageToSanta,
   getMessagesToSanta,
   getMessagesFromSanta,
+  editMessage,
 };
