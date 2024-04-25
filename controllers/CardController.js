@@ -35,14 +35,17 @@ const getOne = async (req, res) => {
 
     const card = await CardModel.findOne({
       _id: cardId,
-    }).populate({path: "user", select: "_id fullName avatarUrl email"});
+    })
+      .populate({path: "user", select: "_id fullName avatarUrl email"})
+      .lean();
 
     if (
       card &&
       card?.selected_by &&
       card.selected_by.toString() !== req.userId
     ) {
-      delete card.selected_by;
+      const {selected_by, ...restCard} = card;
+      return res.json(restCard);
     }
 
     return res.json(card);
