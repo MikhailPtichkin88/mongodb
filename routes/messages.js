@@ -4,6 +4,8 @@ import {checkAuth} from "../utils/index.js";
 
 export const router = new Router();
 
+router.get("/", checkAuth, MessageController.getNewMessages);
+
 router.get("/toSanta", checkAuth, MessageController.getMessagesToSanta);
 router.post("/toSanta", checkAuth, MessageController.sendMessageToSanta);
 

@@ -1,5 +1,6 @@
 import Message from "../models/Message.js";
 import Card from "../models/Card.js";
+import Session from "../models/Session.js";
 
 // кейс: мы Санта и уточняем делатли у того, кому мы дарим подарок
 const sendMessageFromSanta = async (req, res) => {
@@ -18,7 +19,7 @@ const sendMessageFromSanta = async (req, res) => {
     });
 
     await newMessage.save();
-    res.status(201).send("Message sent successfully");
+    res.status(201).json(newMessage);
   } catch (error) {
     res.status(500).send(error.message);
   }
@@ -55,7 +56,7 @@ const sendMessageToSanta = async (req, res) => {
     });
 
     await newMessage.save();
-    res.status(201).send("Message sent successfully");
+    res.status(201).json(newMessage);
   } catch (error) {
     res.status(500).send(error.message);
   }
@@ -75,9 +76,20 @@ const getMessagesFromSanta = async (req, res) => {
         {card_from: cardId, card_to: cardToId},
         {card_from: cardToId, card_to: cardId},
       ])
-      .lean();
 
-    res.json(messages);
+        // при получении отмечаем все сообщения, посланные текущему юзеру, как прочитанные
+        const updMessages = []
+
+        for (let message of messages) {
+            
+          if(message?.card_to?.toString() === cardId && message.is_new_to === true) {
+            message.is_new_to = false
+            await message.save()
+          }
+          updMessages.push(message)
+        }
+    
+    res.json(updMessages);
   } catch (error) {
     console.log(error);
     res.status(500).json({message: "Не удалось получить cессии"});
@@ -111,9 +123,21 @@ const getMessagesToSanta = async (req, res) => {
     }).or([
       {card_from: myCardId, card_to: santaCardId},
       {card_from: santaCardId, card_to: myCardId},
-    ]);
+    ])
 
-    res.json(messages);
+    // при получении отмечаем все сообщения, посланные текущему юзеру, как прочитанные
+    const updMessages = []
+
+    for (let message of messages) {
+        
+      if(message?.card_to?.toString() === myCardId && message.is_new_to === true) {
+        message.is_new_to = false
+        await message.save()
+      }
+      updMessages.push(message)
+      }
+
+    res.json(updMessages);
   } catch (error) {
     console.log(error);
     res.status(500).json({message: "Не удалось получить cессии"});
@@ -149,10 +173,41 @@ const editMessage = async (req, res) => {
   }
 };
 
+const getNewMessages = async (req, res) => {
+  const userId = req.userId;
+  try {
+
+    const myCards = await Card.find({
+      created_by: userId,
+    }).select('session_id')
+    
+    let messages = []
+
+    for(let card of myCards) {
+      const cardId = card._id.toString()
+      const sessionId = card.session_id
+      
+      const session = await Session.findOne({ _id: sessionId }).select("title -_id")
+    
+      const newMessages = await Message.countDocuments({ session_id: sessionId, card_to: cardId, is_new_to: true })
+    
+      if (newMessages) {
+        messages.push({sessionId, sessionTitle: session.title, count: newMessages})
+      }
+    }
+
+  return res.json(messages)
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({message: "Не удалось получить cессии"});
+  }
+};
+
 export {
   sendMessageFromSanta,
   sendMessageToSanta,
   getMessagesToSanta,
   getMessagesFromSanta,
   editMessage,
+  getNewMessages
 };
