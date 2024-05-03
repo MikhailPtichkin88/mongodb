@@ -6,6 +6,8 @@ export const router = new Router();
 
 router.get("/", checkAuth, MessageController.getNewMessages);
 
+router.get("/subscribe", checkAuth, MessageController.subscribe);
+
 router.get("/toSanta", checkAuth, MessageController.getMessagesToSanta);
 router.post("/toSanta", checkAuth, MessageController.sendMessageToSanta);
 

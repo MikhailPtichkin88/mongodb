@@ -32,5 +32,5 @@ app.listen(process.env.PORT, (err) => {
   if (err) {
     console.log(err);
   }
-  console.log("server running on port 8010");
+  console.log(`server running on port ${process.env.PORT}`);
 });

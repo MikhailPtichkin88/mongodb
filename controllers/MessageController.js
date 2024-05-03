@@ -2,6 +2,9 @@ import Message from "../models/Message.js";
 import Card from "../models/Card.js";
 import Session from "../models/Session.js";
 
+import events from "events"
+const emitter = new events.EventEmitter()
+
 // кейс: мы Санта и уточняем делатли у того, кому мы дарим подарок
 const sendMessageFromSanta = async (req, res) => {
   const {sessionId, cardId, cardToId, text} = req.body;
@@ -19,6 +22,10 @@ const sendMessageFromSanta = async (req, res) => {
     });
 
     await newMessage.save();
+
+    // когда мы Санта, то затираем привязку к карточке отправителя
+    emitter.emit("newMessage", {...newMessage?.toObject(), card_from: null})
+
     res.status(201).json(newMessage);
   } catch (error) {
     res.status(500).send(error.message);
@@ -56,6 +63,9 @@ const sendMessageToSanta = async (req, res) => {
     });
 
     await newMessage.save();
+
+    emitter.emit("newMessage", newMessage?.toObject())
+
     res.status(201).json(newMessage);
   } catch (error) {
     res.status(500).send(error.message);
@@ -133,6 +143,7 @@ const getMessagesToSanta = async (req, res) => {
       if(message?.card_to?.toString() === myCardId && message.is_new_to === true) {
         message.is_new_to = false
         await message.save()
+        delete message.card_from
       }
       updMessages.push(message)
       }
@@ -167,7 +178,7 @@ const editMessage = async (req, res) => {
     }
     message.text = text;
     await message.save();
-    res.send("Сообщение успешно обновлено");
+    res.status(200).json(message);
   } catch (error) {
     res.status(500).send(error.message);
   }
@@ -203,11 +214,34 @@ const getNewMessages = async (req, res) => {
   }
 };
 
+ 
+const subscribe = async (req, res) => {
+  const cardId = req?.query?.cardId
+  const sessionId = req?.query?.sessionId
+
+
+  emitter.on("newMessage", async (message) => {
+
+    if (message?.card_to?.toString() === cardId
+      && message.session_id?.toString() === sessionId) {
+      const updMessage = await Message.findById(message?._id)
+
+      updMessage.is_new_to = false
+      await updMessage.save()
+
+      return res.json({...updMessage?.toObject(), card_from: message?.card_from})
+    }
+  
+ })
+}
+
+
 export {
   sendMessageFromSanta,
   sendMessageToSanta,
   getMessagesToSanta,
   getMessagesFromSanta,
   editMessage,
-  getNewMessages
+  getNewMessages,
+  subscribe,
 };
