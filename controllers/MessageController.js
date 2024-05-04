@@ -4,6 +4,7 @@ import Session from "../models/Session.js";
 
 import events from "events"
 const emitter = new events.EventEmitter()
+emitter.setMaxListeners(20);
 
 // кейс: мы Санта и уточняем делатли у того, кому мы дарим подарок
 const sendMessageFromSanta = async (req, res) => {
@@ -19,6 +20,7 @@ const sendMessageFromSanta = async (req, res) => {
       card_from: cardId,
       card_to: cardToId,
       text: text,
+      is_new_to: true,
     });
 
     await newMessage.save();
@@ -60,6 +62,7 @@ const sendMessageToSanta = async (req, res) => {
       card_from: myCard._id,
       card_to: santaCard._id,
       text: text,
+      is_new_to: true,
     });
 
     await newMessage.save();
@@ -216,25 +219,52 @@ const getNewMessages = async (req, res) => {
 
  
 const subscribe = async (req, res) => {
-  const cardId = req?.query?.cardId
-  const sessionId = req?.query?.sessionId
+  const cardId = req?.query?.cardId;
+  const sessionId = req?.query?.sessionId;
 
-
-  emitter.on("newMessage", async (message) => {
-
-    if (message?.card_to?.toString() === cardId
-      && message.session_id?.toString() === sessionId) {
-      const updMessage = await Message.findById(message?._id)
-
-      updMessage.is_new_to = false
-      await updMessage.save()
-
-      return res.json({...updMessage?.toObject(), card_from: message?.card_from})
+  // через emmitter.once не работает один из чатов, имитируем с помощью emitter.on
+  const listener = async (message) => {
+    if (message?.card_to?.toString() === cardId && message.session_id?.toString() === sessionId) {
+      emitter.removeListener("newMessage", listener); // Удаление слушателя сразу после его срабатывания
+      const updMessage = await Message.findById(message?._id);
+      updMessage.is_new_to = false;
+      await updMessage.save();
+      res.json({...updMessage.toObject(), card_from: message?.card_from});
     }
-  
- })
-}
+  };
 
+  emitter.on("newMessage", listener);
+
+  // Отключение слушателя, если клиент отключился
+  req.on('close', () => {
+    emitter.removeListener("newMessage", listener);
+  });
+};
+
+const getNewMessagesCount = async (req, res) => {
+  const userId = req.userId;
+
+    // через emmitter.once не работает один из чатов, имитируем с помощью emitter.on
+  const listener = async (message) => {
+      try {
+        const cards = await Card.find({ created_by: userId }).select('created_by').lean()
+
+      if (cards?.some(card => card._id.toString() === message?.card_to?.toString()) && message?.is_new_to) {
+        emitter.removeListener("newMessage", listener); 
+        const session = await Session.findById(message?.session_id)
+        res.json({sessionId: message?.session_id, sessionTitle: session?.title, text: message?.text});
+      }
+      } catch (error) {
+        console.log(error)
+      }
+    };
+    emitter.on("newMessage", listener);
+  
+    // Отключение слушателя, если клиент отключился
+    req.on('close', () => {
+      emitter.removeListener("newMessage", listener);
+    });
+}
 
 export {
   sendMessageFromSanta,
@@ -244,4 +274,5 @@ export {
   editMessage,
   getNewMessages,
   subscribe,
+  getNewMessagesCount
 };
