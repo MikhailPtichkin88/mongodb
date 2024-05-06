@@ -4,6 +4,7 @@ import ParticipantModel from "../models/Participant.js";
 import fs from "fs";
 import path from "path";
 import {sendEmail} from "../utils/index.js";
+import {shuffleCards} from '../utils/shuffleCards.js'
 
 const getAll = async (req, res) => {
   try {
@@ -307,7 +308,6 @@ const chooseCards = async (req, res) => {
       return res.status(404).json({message: "Ошибка получения участников"});
     }
 
-    let users = [];
     let emails = [];
     participants.forEach((participant) => {
       if (!participant.has_picked_own_card) {
@@ -315,11 +315,10 @@ const chooseCards = async (req, res) => {
           .status(403)
           .json({message: "Не все участники создали свои карточки"});
       }
-      users.push(participant?.user?._id?.toString());
       emails.push(participant?.user?.email);
     });
 
-    const cards = await CardModel.find({session_id: sessionId});
+    const cards = await CardModel.find({session_id: sessionId}).lean()
     if (!cards && !cards.length) {
       return res.status(403).json({message: "Ошибка получения карт"});
     }
@@ -329,28 +328,19 @@ const chooseCards = async (req, res) => {
       });
     }
 
-    let mySelectedCard = {};
-    for (const card of cards) {
-      const filterdUsers = users?.filter(
-        (id) => id !== card?.created_by?.toString()
-      );
-      const selectedBy =
-        filterdUsers[Math.floor(Math.random() * filterdUsers.length)];
+    const shuffledCards = shuffleCards(cards);
 
-      users = users.filter((id) => id !== selectedBy);
-
-      await CardModel.findOneAndUpdate(
-        {_id: card._id},
-        {selected_by: selectedBy}
-      );
-      if (selectedBy === userId) {
-        mySelectedCard = {...card?.toObject(), selected_by: selectedBy};
-      }
+    let mySelectedCard = shuffledCards?.find(card=>card?.selected_by?.toString() === userId)
+    
+    for (let card of shuffledCards) {
+      const updCard = await CardModel.findOne({ _id: card._id })
+      updCard.selected_by = card.selected_by
+      updCard.save()
     }
 
     session.status = "closed";
     await session.save();
-    console.log(emails);
+
     await sendEmail(emails, session._id?.toString(), "select");
     return res.json({session, mySelectedCard});
   } catch (error) {
