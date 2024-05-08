@@ -29,6 +29,7 @@ const getAll = async (req, res) => {
         : ["opened", "in_progress", "closed"];
 
     let totalDocs;
+
     let sessionsIds = [];
 
     if (role === "creator") {
@@ -37,7 +38,8 @@ const getAll = async (req, res) => {
         status: {$in: statusFilter},
         title: {$regex: new RegExp(search, "i")},
       });
-    } else {
+    } else if (role === "participant") {
+
       const matchingParticipants = await ParticipantModel.find({user: userId});
 
       matchingParticipants.forEach((participant) => {
@@ -50,6 +52,30 @@ const getAll = async (req, res) => {
         _id: {$in: sessionsIds},
         created_by: {$ne: userId},
         title: {$regex: new RegExp(search, "i")},
+      });
+    } else {
+
+      const matchingParticipants = await ParticipantModel.find({user: userId});
+
+      matchingParticipants.forEach((participant) => {
+        if (!sessionsIds.includes(participant?.session_id?.toString())) {
+          sessionsIds.push(participant.session_id.toString());
+        }
+      });
+
+      totalDocs = await SessionModel.countDocuments({
+        $or: [
+          {
+            _id: {$in: sessionsIds},
+            created_by: {$ne: userId},
+            title: {$regex: new RegExp(search, "i")},
+          },
+          {
+            created_by: userId,
+            status: {$in: statusFilter},
+            title: {$regex: new RegExp(search, "i")},
+          }
+        ]
       });
     }
 
@@ -74,7 +100,7 @@ const getAll = async (req, res) => {
         .sort({[sortBy]: sortDirection})
         .limit(Number(limit))
         .skip((page - 1) * limit);
-    } else {
+    } else if(role === "participant") {
       data = await SessionModel.find({
         _id: {$in: sessionsIds},
         created_by: {$ne: userId},
@@ -83,7 +109,26 @@ const getAll = async (req, res) => {
         .sort({[sortBy]: sortDirection})
         .limit(Number(limit))
         .skip((page - 1) * limit);
+    }else {
+
+      data = await SessionModel.find({
+        $or: [
+          {
+            created_by: userId,
+            status: {$in: statusFilter},
+            title: {$regex: new RegExp(search, "i")},
+          },
+          {
+            _id: {$in: sessionsIds},
+            created_by: {$ne: userId},
+            title: {$regex: new RegExp(search, "i")},
+          }
+      ]})
+        .sort({[sortBy]: sortDirection})
+        .limit(Number(limit))
+        .skip((page - 1) * limit);
     }
+
     res.json({data, pagination});
   } catch (error) {
     console.log(error);
