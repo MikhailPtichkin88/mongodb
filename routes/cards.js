@@ -8,7 +8,7 @@ import {
 import {titleAndDescrValidation, selectCardValidation} from "../validations.js";
 import multer from "multer";
 import fs from "fs";
-
+const MAX_SIZE = 2 * 1024 * 1024;
 export const router = new Router();
 
 router.get("/", checkAuth, CardController.getAll);
@@ -43,7 +43,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: {fileSize: 1000000},
+  limits: {fileSize: MAX_SIZE},
 });
 
 router.patch(

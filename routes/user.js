@@ -18,7 +18,7 @@ import fs from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-
+const MAX_SIZE = 3 * 1024 * 1024;
 export const router = new Router();
 
 router.post(
@@ -54,7 +54,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: {fileSize: 1000000},
+  limits: {fileSize: MAX_SIZE},
 });
 
 router.patch(
